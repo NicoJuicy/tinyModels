@@ -2,6 +2,12 @@ import tensorflow as tf
 from tensorflow import keras
 import tensorflow_model_optimization as tfmot
 
+# TODO: have some training data handy
+
+(images_train, labels_train), (images_test, labels_test) = tf.keras.datasets.imdb.load_data()
+
+# TODO: optimize the sizes and shapes, make sure this stuff fits in together
+
 quantize_model = tfmot.quantization.keras.quantize_model
 model = keras.Sequential()
 
