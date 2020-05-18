@@ -15,3 +15,12 @@ Example usage:
 ```bash
 python models.py
 ```
+
+## Models to test
+- VGG
+- ResNet-50
+- Inception v3
+- MobileNet
+- NAS - net trains itself
+- OpenFace
+- dlib
