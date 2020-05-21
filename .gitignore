@@ -1,5 +1,7 @@
 .idea
 *.zip
+*.jpg
+*.npy
 
 widgets
 test.py
