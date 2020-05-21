@@ -4,18 +4,24 @@ from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.preprocessing.image import img_to_array
 
 
-dataset_path = "path"
-export_path = "path"
+dataset_path = "dataset"
+export_path = "export"
 
+if not os.path.isdir(dataset_path):
+    os.makedirs(dataset_path)
+    print("You need to fill up the dataset folder first")
+if not os.path.isdir(export_path):
+    os.makedirs(export_path)
+
+folder_size = len(os.listdir(dataset_path))
+saved = 0
 for person in os.listdir(dataset_path):
     for image in os.listdir(f"{dataset_path}/{person}"):
         img = load_img(f"{dataset_path}/{person}/{image}")
         img_array = img_to_array(img)
         np_array = np.asarray(img_array)
-        np.save(f"{export_path}/{hashlib.sha1(image).hexdigest()[:10]}.npy", np_array)
+        np.save(f"{export_path}/{hashlib.sha1(image.encode()).hexdigest()}", np_array)
+    saved += 1
+    print(f"Processed: {saved}/{folder_size}")
 
-dataset_np = []
-for face in os.listdir(export_path):
-    dataset_np.append(face)
-np.save("dataset.npy", dataset_np)
 
