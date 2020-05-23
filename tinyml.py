@@ -1,9 +1,11 @@
 import sys, argparse, pathlib
 from matplotlib import pyplot
 from numpy import shape
+from math import floor
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
+import numpy as np
 
 parser = argparse.ArgumentParser(
     description="Automatic model optimizer"
@@ -42,10 +44,19 @@ args = parser.parse_args()
 
 
 def load_dataset():
-    (trainX, trainY), (testX, testY) = cifar10.load_data()
+    # (trainX, trainY), (testX, testY) = cifar10.load_data()
+    dataset = np.load("export/dataset.npy")
+    dataset_size = np.shape(dataset)[0]
+    training_perc = 0.8
+    training_len = floor(dataset_size * training_perc)
+    trainX = dataset[0:training_len, :, :, :]
+    testX = dataset[training_len:, :, :, :]
+    trainY = np.ones((training_len, 10))
+    testY = np.ones((dataset_size - training_len, 10))
+
     trainY = to_categorical(trainY)
     testY = to_categorical(testY)
-    # print(shape(trainX), shape(trainY))
+    print(shape(trainX), shape(testX), shape(trainY), shape(testY))
     return trainX, trainY, testX, testY
 
 

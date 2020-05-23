@@ -28,5 +28,5 @@ def vgg_3():
     model.add(Dense(10, activation="softmax"))
     opt = SGD(lr=0.001, momentum=0.9)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
-    # optimizer = "adam" woulda worked too
+    # optimizer = "adam" woulda worked above too
     return model
