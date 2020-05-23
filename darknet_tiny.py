@@ -1,63 +1,87 @@
-import tensorflow as tf
-from tensorflow import keras
-import tensorflow_model_optimization as tfmot
-
-# TODO: have some training data handy
-
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar100.load_data()
-
-# TODO: optimize the sizes and shapes, make sure this stuff fits in together
-
-quantize_model = tfmot.quantization.keras.quantize_model
-model = keras.Sequential()
-
-model.add(keras.layers.Conv2D(28, kernel_size=(3,3), input_shape=(224,224,3)))
-model.add(keras.layers.MaxPooling2D(pool_size=(2,2), input_shape=(224, 224, 16)))
-model.add(keras.layers.Conv2D(32, kernel_size=(3,3), input_shape=(112,112,16)))
-model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), input_shape=(112, 112, 32)))
-
-model.add(keras.layers.Conv2D(16, kernel_size=(1,1), input_shape=(56,56,32)))
-model.add(keras.layers.Conv2D(128, kernel_size=(3,3), input_shape=(56,56,16)))
-model.add(keras.layers.Conv2D(16, kernel_size=(1,1), input_shape=(56,56,128)))
-model.add(keras.layers.Conv2D(128, kernel_size=(3,3), input_shape=(56,56,16)))
-
-model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), input_shape=(56, 56, 128)))
-
-model.add(keras.layers.Conv2D(32, kernel_size=(1,1), input_shape=(28,28,128)))
-model.add(keras.layers.Conv2D(256, kernel_size=(3,3), input_shape=(28,28,32)))
-model.add(keras.layers.Conv2D(32, kernel_size=(1,1), input_shape=(28,28,256)))
-model.add(keras.layers.Conv2D(256, kernel_size=(3,3), input_shape=(28,28,32)))
-
-model.add(keras.layers.MaxPooling2D(pool_size=(2, 2), input_shape=(28,28,256)))
-
-model.add(keras.layers.Conv2D(64, kernel_size=(1,1), input_shape=(14,14,256)))
-model.add(keras.layers.Conv2D(512, kernel_size=(3,3), input_shape=(14,14,64)))
-model.add(keras.layers.Conv2D(64, kernel_size=(1,1), input_shape=(14,14,512)))
-model.add(keras.layers.Conv2D(512, kernel_size=(3,3), input_shape=(14,14,64)))
-model.add(keras.layers.Conv2D(128, kernel_size=(1,1), input_shape=(14,14,512)))
-model.add(keras.layers.Conv2D(1000, kernel_size=(1,1), input_shape=(14,14,128)))
-
-model.add(keras.layers.AvgPool2D(input_shape=(14,14,1000)))
-model.add(keras.layers.Softmax())
-
-# model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
-
-# quantized_model = quantize_model(model)
-#
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-#
-# quantize_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+import sys
+from matplotlib import pyplot
+from tensorflow.keras.datasets import cifar10
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
+from tensorflow.keras.optimizers import SGD
 
 
-batch_size = 10
-epochs = 100
+def load_dataset():
+    (trainX, trainY), (testX, testY) = cifar10.load_data()
+    trainY = to_categorical(trainY)
+    testY = to_categorical(testY)
+    return trainX, trainY, testX, testY
 
-print("Normal")
-history = model.fit(x=x_train,y=y_train, epochs=epochs, batch_size=batch_size)
-model.summary()
 
-results = model.evaluate(X, y)
-print("Loss, Accuracy:", results)
+def prep_pixels(train, test):
+    # converting from uint8 to float32
+    train_norm = train.astype("float32")
+    test_norm = test.astype("float32")
+    # normalize to range 0-1
+    train_norm = train_norm / 255.0
+    test_norm = test_norm / 255.0
+    # return normalized images
+    return train_norm, test_norm
+
+
+def define_model():
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same", input_shape=(32, 32, 3)))
+    model.add(Conv2D(32, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Conv2D(64, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
+    model.add(Conv2D( 64,(3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Conv2D(128, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
+    model.add(Conv2D(128, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Dropout(0.2))
+    model.add(Flatten())
+    model.add(Dense(128, activation="relu", kernel_initializer="he_uniform"))
+    model.add(Dropout(0.2))
+    model.add(Dense(10, activation="softmax"))
+    opt = SGD(lr=0.001, momentum=0.9)
+    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
+    return model
+
+
+def summarize_diagnostics(history):
+    pyplot.subplot(211)
+    pyplot.title("Cross Entropy Loss")
+    pyplot.plot(history.history["loss"], color="blue", label="train")
+    pyplot.plot(history.history["val_loss"], color="orange", label="test")
+    # plot accuracy
+    pyplot.subplot(212)
+    pyplot.title("Classification Accuracy")
+    pyplot.plot(history.history["accuracy"], color="blue", label="train")
+    pyplot.plot(history.history["val_accuracy"], color="orange", label="test")
+    # save plot to file
+    filename = sys.argv[0].split("/")[-1]
+    pyplot.savefig(filename + "_plot.png")
+    pyplot.close()
+
+
+def run_training(epochs, batch_size):
+    trainX, trainY, testX, testY = load_dataset()
+    trainX, testX = prep_pixels(trainX, testX)
+    model = define_model()
+    history = model.fit(
+        trainX,
+        trainY,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(testX, testY),
+    )
+    results = model.evaluate(testX, testY)
+    print("Loss, Accuracy:", results)
+    summarize_diagnostics(history)
+
+
+# entry point
+run_training(epochs=5, batch_size=64)
 
 # print("Quantized model")
 # history = quantized_model.fit(x=images_train,y=labels_train, epochs=epochs, batch_size=batch_size)
