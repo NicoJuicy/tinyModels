@@ -1,5 +1,6 @@
 import sys, argparse, pathlib
 from matplotlib import pyplot
+from numpy import shape
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
@@ -44,6 +45,7 @@ def load_dataset():
     (trainX, trainY), (testX, testY) = cifar10.load_data()
     trainY = to_categorical(trainY)
     testY = to_categorical(testY)
+    # print(shape(trainX), shape(trainY))
     return trainX, trainY, testX, testY
 
 

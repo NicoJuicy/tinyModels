@@ -15,13 +15,16 @@ if not os.path.isdir(export_path):
 
 folder_size = len(os.listdir(dataset_path))
 saved = 0
-for person in os.listdir(dataset_path):
-    for image in os.listdir(f"{dataset_path}/{person}"):
-        img = load_img(f"{dataset_path}/{person}/{image}")
-        img_array = img_to_array(img)
-        np_array = np.asarray(img_array)
-        np.save(f"{export_path}/{hashlib.sha1(image.encode()).hexdigest()}", np_array)
+width = 32
+height = 32
+big_array = np.empty((folder_size,width,height,3), dtype=np.uint8)
+print(big_array)
+for image in os.listdir(dataset_path):
+    img = load_img(f"{dataset_path}/{image}")
+    big_array[saved,:,:,:] = img_to_array(img)
     saved += 1
-    print(f"Processed: {saved}/{folder_size}")
+    print(f"Processed {saved}/{folder_size}")
 
+# np.save(f"{export_path}/{hashlib.sha1(image.encode()).hexdigest()}", big_array) # goofy name
+np.save (f"{export_path}/dataset", big_array)
 
