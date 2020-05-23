@@ -4,6 +4,7 @@
 *.npy
 dataset
 export
+darknet_tiny.py_plot.png
 
 widgets
 test.py

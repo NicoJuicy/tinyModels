@@ -1,4 +1,4 @@
-import sys
+import sys, argparse, pathlib
 from matplotlib import pyplot
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
@@ -6,6 +6,34 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout
 from tensorflow.keras.optimizers import SGD
 
+parser = argparse.ArgumentParser(
+    description="Automatic model optimizer"
+)
+
+parser.add_argument(
+    "-v",
+    "--version",
+    action="version",
+    version=f"Automatic NN model optimizer version 1.0",
+)
+
+parser.add_argument(
+    "-b",
+    "--batchsize",
+    type=int,
+    help="Type in how many samples you want in one training batch "
+         "default is 64",
+    default=64,
+)
+
+parser.add_argument(
+    "-e",
+    "--epochs",
+    type=int,
+    help="Type in how many training epochs you want to have ",
+    default=100,
+)
+args = parser.parse_args()
 
 def load_dataset():
     (trainX, trainY), (testX, testY) = cifar10.load_data()
@@ -18,10 +46,9 @@ def prep_pixels(train, test):
     # converting from uint8 to float32
     train_norm = train.astype("float32")
     test_norm = test.astype("float32")
-    # normalize to range 0-1
+    # normalizing to range 0 to 1
     train_norm = train_norm / 255.0
     test_norm = test_norm / 255.0
-    # return normalized images
     return train_norm, test_norm
 
 
@@ -44,7 +71,7 @@ def define_model():
     model.add(Dropout(0.2))
     model.add(Dense(10, activation="softmax"))
     opt = SGD(lr=0.001, momentum=0.9)
-    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
+    model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"]) #optimizer = "adam" woulda worked too
     return model
 
 
@@ -74,15 +101,27 @@ def run_training(epochs, batch_size):
         epochs=epochs,
         batch_size=batch_size,
         validation_data=(testX, testY),
+        shuffle=True
     )
     results = model.evaluate(testX, testY)
     print("Loss, Accuracy:", results)
     summarize_diagnostics(history)
 
+    # saving this stuff
+    model_structure = model.to_json()
+    f = pathlib.Path("model_structure.json")
+    f.write_text(model_structure)
+
+    model.save_weights("model_weights.h5")
+
 
 # entry point
-run_training(epochs=5, batch_size=64)
+number_epochs = args.batchsize
+batch_len = args.epochs
+run_training(epochs=number_epochs, batch_size=batch_len)
 
+
+# # TODO: perform optimizations for TinyML
 # print("Quantized model")
 # history = quantized_model.fit(x=images_train,y=labels_train, epochs=epochs, batch_size=batch_size)
 # model.summary()
@@ -103,4 +142,3 @@ run_training(epochs=5, batch_size=64)
 # # do xxd magic here, try this out in the terminal
 # # xxd -i model.tflite > model.cc
 #
-# # TODO: perform optimizations for TinyML
