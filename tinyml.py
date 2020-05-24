@@ -5,6 +5,7 @@ from math import floor
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
+from models.squeezenet import SqueezeNet
 import numpy as np
 
 parser = argparse.ArgumentParser(
@@ -44,15 +45,15 @@ args = parser.parse_args()
 
 
 def load_dataset():
-    # (trainX, trainY), (testX, testY) = cifar10.load_data()
+    (trainX, trainY), (testX, testY) = cifar10.load_data()
     dataset = np.load("export/dataset.npy")
     dataset_size = np.shape(dataset)[0]
     training_perc = 0.8
     training_len = floor(dataset_size * training_perc)
-    trainX = dataset[0:training_len, :, :, :]
-    testX = dataset[training_len:, :, :, :]
-    trainY = np.ones((training_len, 10))
-    testY = np.ones((dataset_size - training_len, 10))
+    # trainX = dataset[0:training_len, :, :, :]
+    # testX = dataset[training_len:, :, :, :]
+    # trainY = np.ones((training_len, 10))
+    # testY = np.ones((dataset_size - training_len, 10))
 
     trainY = to_categorical(trainY)
     testY = to_categorical(testY)
@@ -90,6 +91,7 @@ def run_training(epochs, batch_size):
     trainX, trainY, testX, testY = load_dataset()
     trainX, testX = prep_pixels(trainX, testX)
     model = vgg_3()
+    # model = SqueezeNet(nb_classes=10, inputs=(3, 32, 32))
     history = model.fit(
         trainX,
         trainY,

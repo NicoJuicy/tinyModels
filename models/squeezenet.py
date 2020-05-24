@@ -14,25 +14,16 @@ from keras.layers import GlobalAveragePooling2D
 
 def SqueezeNet(nb_classes, inputs=(3, 224, 224)):
     """ Keras Implementation of SqueezeNet(arXiv 1602.07360)
-
     @param nb_classes: total number of final categories
-
     Arguments:
     inputs -- shape of the input images (channel, cols, rows)
-
     """
 
     input_img = Input(shape=inputs)
     conv1 = Convolution2D(
-        96,
-        (7, 7),
-        activation="relu",
-        kernel_initializer="glorot_uniform",
-        strides=(2, 2),
-        padding="same",
-        name="conv1",
-        data_format="channels_first",
-    )(input_img)
+        96, (7, 7), activation="relu",
+        kernel_initializer="glorot_uniform",strides=(2, 2),
+        padding="same", name="conv1", data_format="channels_first")(input_img)
     maxpool1 = MaxPooling2D(
         pool_size=(3, 3), strides=(2, 2), name="maxpool1", data_format="channels_first"
     )(conv1)

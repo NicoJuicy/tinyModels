@@ -1,7 +1,6 @@
 .idea
 *.zip
-*.jpg
-*.npy
+.vscode
 dataset
 export
 darknet_tiny.py_plot.png
