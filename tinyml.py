@@ -6,6 +6,7 @@ from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
 from models.squeezenet import SqueezeNet
+from models.squeezenet_opt import squeezenet
 import numpy as np
 
 parser = argparse.ArgumentParser(
@@ -33,12 +34,12 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=100,
+    default=50,
 )
 parser.add_argument(
     "-m",
     "--model",
-    help="Choose model to be used for training: [vgg_3]",
+    help="Choose model to be used for training: [vgg_3][squeezenet_full][squeezenet_simplified][squeezenet_quantized]",
     default="vgg_3",
 )
 args = parser.parse_args()
@@ -83,15 +84,16 @@ def summarize_diagnostics(history):
     pyplot.plot(history.history["val_accuracy"], color="orange", label="test")
     # save plot to file
     filename = sys.argv[0].split("/")[-1]
-    pyplot.savefig(filename + "_plot.png")
-    pyplot.close()
+    # pyplot.savefig(filename + "_plot.png")
+    pyplot.show()
 
 
 def run_training(epochs, batch_size):
     trainX, trainY, testX, testY = load_dataset()
     trainX, testX = prep_pixels(trainX, testX)
-    model = vgg_3()
-    # model = SqueezeNet(nb_classes=10, inputs=(3, 32, 32))
+    # model = vgg_3()
+    # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
+    model = squeezenet()
     history = model.fit(
         trainX,
         trainY,

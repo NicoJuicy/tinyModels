@@ -5,11 +5,11 @@
 # courtesy of https://raw.githubusercontent.com/DT42/squeezenet_demo/master/model.py
 
 import h5py
-from keras.models import Model
-from keras.layers import Input, Activation, Concatenate
-from keras.layers import Flatten, Dropout
-from keras.layers import Convolution2D, MaxPooling2D
-from keras.layers import GlobalAveragePooling2D
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Activation, Concatenate
+from tensorflow.keras.layers import Flatten, Dropout
+from tensorflow.keras.layers import Convolution2D, MaxPooling2D
+from tensorflow.keras.layers import GlobalAveragePooling2D
 
 
 def SqueezeNet(nb_classes, inputs=(3, 224, 224)):
