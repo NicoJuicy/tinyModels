@@ -1,13 +1,15 @@
 import sys, argparse, pathlib
+import numpy as np
 from matplotlib import pyplot
-from numpy import shape
 from math import floor
+import tensorflow_model_optimization as tfmot
+import tensorflow as tf
 from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
 from models.squeezenet import SqueezeNet
 from models.squeezenet_opt import squeezenet
-import numpy as np
+
 
 parser = argparse.ArgumentParser(
     description="Automatic model optimizer"
@@ -58,7 +60,6 @@ def load_dataset():
 
     trainY = to_categorical(trainY)
     testY = to_categorical(testY)
-    print(shape(trainX), shape(testX), shape(trainY), shape(testY))
     return trainX, trainY, testX, testY
 
 
@@ -94,6 +95,11 @@ def run_training(epochs, batch_size):
     # model = vgg_3()
     # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
     model = squeezenet()
+    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+    quantize_model = tfmot.quantization.keras.quantize_model
+    quantized_model = quantize_model(model)
+    quantized_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+
     history = model.fit(
         trainX,
         trainY,
@@ -102,6 +108,8 @@ def run_training(epochs, batch_size):
         validation_data=(testX, testY),
         shuffle=True
     )
+
+    model.summary()
     results = model.evaluate(testX, testY)
     print("Loss, Accuracy:", results)
     summarize_diagnostics(history)
@@ -110,8 +118,51 @@ def run_training(epochs, batch_size):
     model_structure = model.to_json()
     f = pathlib.Path("model_structure.json")
     f.write_text(model_structure)
-
     model.save_weights("model_weights.h5")
+
+    history_q = quantized_model.fit(
+        trainX,
+        trainY,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(testX, testY),
+        shuffle=True
+    )
+
+    quantized_model.summary()
+    results = quantized_model.evaluate(testX, testY)
+    print("Loss, Accuracy:", results)
+    summarize_diagnostics(history_q)
+
+    # saving this other stuff
+    q_model_structure = quantized_model.to_json()
+    f = pathlib.Path("q_model_structure.json")
+    f.write_text(q_model_structure)
+    model.save_weights("q_model_weights.h5")
+
+    # def representative_dataset_gen():
+    #     for image in images_test:
+    #         array = np.array(image)
+    #         array = np.expand_dims(array, axis=0)
+    #         yield ([array])
+
+    converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
+    # converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE] # experiment with this
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    # quantization
+    converter.inference_input_type = tf.uint8
+    converter.inference_output_type = tf.uint8
+    # converter.representative_dataset = representative_dataset_gen
+    tflite_model = converter.convert()
+
+    open("MNIST_full_quanitization.tflite", "wb").write(tflite_model)
+    # !xxd - i MNIST_full_quanitization.tflite > MNIST_full_quanitization.cc
+
+    ## TODO: Pruning
+
+
+
 
 
 # entry point
@@ -119,26 +170,3 @@ number_epochs = args.epochs
 batch_len = args.batchsize
 model_choice = args.model
 run_training(epochs=number_epochs, batch_size=batch_len)
-
-
-# # TODO: perform optimizations for TinyML
-# print("Quantized model")
-# history = quantized_model.fit(x=images_train,y=labels_train, epochs=epochs, batch_size=batch_size)
-# model.summary()
-#
-# res = model.evaluate(images_test, labels_test)
-# print("Model1 has an accuracy of {0:.2f}%".format(res[1] * 100))
-#
-# res = quantized_model.evaluate(images_test, labels_test)
-# print("Model1 has an accuracy of {0:.2f}%".format(res[1] * 100))
-#
-#
-# converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
-# converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-# tflite_model = converter.convert()
-#
-# open("model.tflite", "wb").write(tflite_model)
-#
-# # do xxd magic here, try this out in the terminal
-# # xxd -i model.tflite > model.cc
-#

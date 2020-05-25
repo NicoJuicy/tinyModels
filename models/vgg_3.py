@@ -8,9 +8,9 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropou
 from tensorflow.keras.optimizers import SGD
 
 
-def vgg_3():
+def vgg_3(input=(32, 32, 3)):
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same", input_shape=(32, 32, 3)))
+    model.add(Conv2D(32, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same", input_shape=input))
     model.add(Conv2D(32, (3, 3), activation="relu", kernel_initializer="he_uniform", padding="same"))
     model.add(MaxPooling2D((2, 2)))
     model.add(Dropout(0.2))
