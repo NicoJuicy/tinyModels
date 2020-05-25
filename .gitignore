@@ -3,6 +3,7 @@
 .vscode
 *.json
 *.h5
+*.tflite
 dataset
 export
 darknet_tiny.py_plot.png
