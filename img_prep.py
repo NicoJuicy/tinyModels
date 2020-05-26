@@ -14,26 +14,29 @@ if not os.path.isdir(dataset_path_faces):
 if not os.path.isdir(export_path):
     os.makedirs(export_path)
 
-folder_size = len(os.listdir(dataset_path_faces))
+folder_size = len(os.listdir(dataset_path_faces)) + len(os.listdir(dataset_path_nonfaces))
 saved = 0
 width = 32
 height = 32
-big_array = np.empty((folder_size,width,height,3,1), dtype=np.uint8)
+big_array = np.empty((folder_size,width,height,3), dtype=np.uint8)
+labels = np.empty((folder_size), dtype=np.uint8)
 print(big_array)
 # load faces
 for image in os.listdir(dataset_path_faces):
     img = load_img(f"{dataset_path_faces}/{image}")
-    big_array[saved,:,:,:,1] = img_to_array(img) # 1 means True, this is a positive face
+    big_array[saved,:,:,:] = img_to_array(img)
+    labels[saved] = 1 # 1 means True, this is a positive face
     saved += 1
     print(f"Processed {saved}/{folder_size}")
 
 # load random non-face objects
 for image in os.listdir(dataset_path_nonfaces):
     img = load_img(f"{dataset_path_nonfaces}/{image}")
-    big_array[saved,:,:,:,0] = img_to_array(img) # 0 means False, this is a negative, a non-face
+    big_array[saved,:,:,:] = img_to_array(img)
+    labels[saved] = 0 # 0 means False, this is a negative, a non-face
     saved += 1
     print(f"Processed {saved}/{folder_size}")
 
 # np.save(f"{export_path}/{hashlib.sha1(image.encode()).hexdigest()}", big_array) # goofy name
-np.save (f"{export_path}/dataset", big_array)
-
+np.save(f"{export_path}/dataset", big_array)
+np.save(f"{export_path}/labels", labels)

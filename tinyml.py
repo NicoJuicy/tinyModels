@@ -47,15 +47,16 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def load_dataset(dataset_path="export/dataset.npy", training_perc=0.8):
+def load_dataset(dataset_path="export/dataset.npy", labels_path="export/labels.npy", training_perc=0.8):
     # (trainX, trainY), (testX, testY) = cifar10.load_data()
     dataset = np.load(dataset_path)
+    labels = np.load(labels_path)
     dataset_size = np.shape(dataset)[0]
     training_len = floor(dataset_size * training_perc)
-    trainX = dataset[0:training_len, :, :, :,-1]
-    testX = dataset[training_len:, :, :, :,-1]
-    trainY = dataset[0:training_len,0,0,0,:]
-    testY = np.ones((dataset_size - training_len,0,0,0,:))
+    trainX = dataset[0:training_len, :, :, :]
+    testX = dataset[training_len:, :, :, :]
+    trainY = (labels[0:training_len])
+    testY = (labels[training_len:])
 
     # trainY = to_categorical(trainY)
     # testY = to_categorical(testY)
@@ -94,10 +95,10 @@ def run_training(epochs, batch_size):
     # model = vgg_3()
     # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
     model = squeezenet(classes=2)
-    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
     quantize_model = tfmot.quantization.keras.quantize_model
     quantized_model = quantize_model(model)
-    quantized_model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+    quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
     history = model.fit(
         trainX,
@@ -155,7 +156,7 @@ def run_training(epochs, batch_size):
     # converter.representative_dataset = representative_dataset_gen
     tflite_model = converter.convert()
 
-    open("MNIST_full_quanitization.tflite", "wb").write(tflite_model)
+    open("tinyFace.tflite", "wb").write(tflite_model)
     # !xxd - i MNIST_full_quanitization.tflite > MNIST_full_quanitization.cc
 
     ## TODO: Pruning
