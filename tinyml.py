@@ -47,19 +47,18 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def load_dataset():
-    (trainX, trainY), (testX, testY) = cifar10.load_data()
-    dataset = np.load("export/dataset.npy")
+def load_dataset(dataset_path="export/dataset.npy", training_perc=0.8):
+    # (trainX, trainY), (testX, testY) = cifar10.load_data()
+    dataset = np.load(dataset_path)
     dataset_size = np.shape(dataset)[0]
-    training_perc = 0.8
     training_len = floor(dataset_size * training_perc)
-    # trainX = dataset[0:training_len, :, :, :]
-    # testX = dataset[training_len:, :, :, :]
-    # trainY = np.ones((training_len, 10))
-    # testY = np.ones((dataset_size - training_len, 10))
+    trainX = dataset[0:training_len, :, :, :,-1]
+    testX = dataset[training_len:, :, :, :,-1]
+    trainY = dataset[0:training_len,0,0,0,:]
+    testY = np.ones((dataset_size - training_len,0,0,0,:))
 
-    trainY = to_categorical(trainY)
-    testY = to_categorical(testY)
+    # trainY = to_categorical(trainY)
+    # testY = to_categorical(testY)
     return trainX, trainY, testX, testY
 
 
@@ -94,7 +93,7 @@ def run_training(epochs, batch_size):
     trainX, testX = prep_pixels(trainX, testX)
     # model = vgg_3()
     # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
-    model = squeezenet()
+    model = squeezenet(classes=2)
     model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
     quantize_model = tfmot.quantization.keras.quantize_model
     quantized_model = quantize_model(model)

@@ -4,24 +4,33 @@ from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.preprocessing.image import img_to_array
 
 
-dataset_path = "dataset"
+dataset_path_faces = "dataset/faces"
+dataset_path_nonfaces = "dataset/non_faces"
 export_path = "export"
 
-if not os.path.isdir(dataset_path):
-    os.makedirs(dataset_path)
+if not os.path.isdir(dataset_path_faces):
+    os.makedirs(dataset_path_faces)
     print("You need to fill up the dataset folder first")
 if not os.path.isdir(export_path):
     os.makedirs(export_path)
 
-folder_size = len(os.listdir(dataset_path))
+folder_size = len(os.listdir(dataset_path_faces))
 saved = 0
 width = 32
 height = 32
-big_array = np.empty((folder_size,width,height,3), dtype=np.uint8)
+big_array = np.empty((folder_size,width,height,3,1), dtype=np.uint8)
 print(big_array)
-for image in os.listdir(dataset_path):
-    img = load_img(f"{dataset_path}/{image}")
-    big_array[saved,:,:,:] = img_to_array(img)
+# load faces
+for image in os.listdir(dataset_path_faces):
+    img = load_img(f"{dataset_path_faces}/{image}")
+    big_array[saved,:,:,:,1] = img_to_array(img) # 1 means True, this is a positive face
+    saved += 1
+    print(f"Processed {saved}/{folder_size}")
+
+# load random non-face objects
+for image in os.listdir(dataset_path_nonfaces):
+    img = load_img(f"{dataset_path_nonfaces}/{image}")
+    big_array[saved,:,:,:,0] = img_to_array(img) # 0 means False, this is a negative, a non-face
     saved += 1
     print(f"Processed {saved}/{folder_size}")
 
