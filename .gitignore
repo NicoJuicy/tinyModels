@@ -4,6 +4,7 @@
 *.json
 *.h5
 *.tflite
+*.npy
 dataset
 export
 darknet_tiny.py_plot.png

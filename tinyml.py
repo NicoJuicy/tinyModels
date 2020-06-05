@@ -157,6 +157,7 @@ def run_training(epochs, batch_size):
     # converter.representative_dataset = representative_dataset_gen
     tflite_model = converter.convert()
 
+
     open("tinyFace.tflite", "wb").write(tflite_model)
     # !xxd - i MNIST_full_quanitization.tflite > MNIST_full_quanitization.cc
 
