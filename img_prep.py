@@ -40,7 +40,3 @@ for image in os.listdir(dataset_path_nonfaces):
 # np.save(f"{export_path}/{hashlib.sha1(image.encode()).hexdigest()}", big_array) # goofy name
 np.save(f"{export_path}/dataset", big_array)
 np.save(f"{export_path}/labels", labels)
-
-
-# TODO
-# generate negatives in a smarter manner
