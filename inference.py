@@ -1,8 +1,12 @@
 import tensorflow as tf
 import numpy as np
+import os
+from matplotlib import pyplot
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 platform = "keras"
 # platform = "tflite"
+
 
 # For running full-size model inference
 if platform == "keras":
@@ -12,10 +16,37 @@ if platform == "keras":
     # inference prototype: result = model.predict(image)
 
     dataset_file = "export/dataset.npy"
-    dataset = np.load(dataset_file)
-    result = model.predict(dataset)
-    # print(np.shape(dataset))
-    print(result)
+
+    positives = 0
+    negatives = 0
+
+    for one_image in os.listdir("dataset/test"):
+        if (positives + negatives) < 50:
+
+            img1 = load_img(f"dataset/test/{one_image}")
+            img_array = np.empty((1, 32, 32, 3), dtype=np.uint8)
+            img = img_to_array(img1)
+            img_array[0, :, :, :] = img
+            result = model.predict(img_array)
+
+        if result[0, 0] == 0 and result[0, 1] == 1:
+           positives += 1
+        elif result[0, 0] == 1 and result[0, 1] == 0:
+            negatives += 1
+
+    print(f"Positives: {positives / (positives + negatives) * 100}%")
+    print(f"Negatives: {negatives / (positives + negatives) * 100}%")
+
+    # img1 = load_img("dataset/faces/abb8c22e6900.jpg")
+    # img_array = np.empty((1, 32, 32, 3), dtype=np.uint8)
+    # img = img_to_array(img1)
+    # img_array[0,:,:,:] = img
+    # result = model.predict(img_array)
+
+    # if result[0,0] == 0 and result[0,1] == 1:
+    #     print("Face positive")
+    # elif result[0,0] == 1 and result[0,1] == 0:
+    #     print("Face negative")
 
 # For running TFlite reduced-size model inference
 elif platform == "tflite":
