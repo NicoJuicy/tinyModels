@@ -1,104 +1,77 @@
-#code forked and tweaked from https://github.com/ageitgey/face_recognition/blob/master/examples/facerec_from_webcam_faster.py
-#to extend, just add more people into the known_people folder
-
-import face_recognition
-import cv2
+import cv2, os
+import tensorflow as tf
 import numpy as np
-import os
-import glob
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
-# Get a reference to webcam #0 (the default one)
-video_capture = cv2.VideoCapture(0)
 
-#make array of sample pictures with encodings
-known_face_encodings = []
-known_face_names = []
-dirname = os.path.dirname(__file__)
-path = os.path.join(dirname, 'known_people/')
+cam = cv2.VideoCapture(0)
+cv2.namedWindow("TFLite Inference")
+img_counter = 0
 
-#make an array of all the saved jpg files' paths
-list_of_files = [f for f in glob.glob(path+'*.jpg')]
-#find number of known faces
-number_files = len(list_of_files)
+font = cv2.FONT_HERSHEY_SIMPLEX
+bottomLeftCornerOfText = (10,30)
+fontScale = 1
+fontColor = (255,255,255)
+lineType = 2
 
-names = list_of_files.copy()
+def face_detector(image):
+    model_path = "tinyFace.tflite"
+    interpreter = tf.lite.Interpreter(model_path=model_path)
+    interpreter.allocate_tensors()
 
-for i in range(number_files):
-    globals()['image_{}'.format(i)] = face_recognition.load_image_file(list_of_files[i])
-    globals()['image_encoding_{}'.format(i)] = face_recognition.face_encodings(globals()['image_{}'.format(i)])[0]
-    known_face_encodings.append(globals()['image_encoding_{}'.format(i)])
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-    # Create array of known names
-    names[i] = names[i].replace("known_people/", "")  
-    known_face_names.append(names[i])
+    input_shape = input_details[0]["shape"]
 
-# Initialize some variables
-face_locations = []
-face_encodings = []
-face_names = []
-process_this_frame = True
+    img1 = load_img(image, target_size=(32, 32))
+    input_data = np.empty((1, 32, 32, 3), dtype=np.float32)
+    img = img_to_array(img1)
+    input_data[0, :, :, :] = img
+    interpreter.set_tensor(input_details[0]["index"], input_data)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]["index"])
+
+    threshold = 0.9
+
+    if output_data[0, 0] >= threshold:
+        print("Positive: ", output_data)
+        return "POSITIVE"
+    elif output_data[0, 0] <= threshold:
+        print("Negative: ", output_data)
+        return "NEGATIVE"
+    else:
+        print("Not sure: ", output_data)
+        return "NO IDEA"
+
 
 while True:
-    # Grab a single frame of video
-    ret, frame = video_capture.read()
-
-    # Resize frame of video to 1/4 size for faster face recognition processing
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-
-    # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-    rgb_small_frame = small_frame[:, :, ::-1]
-
-    # Only process every other frame of video to save time
-    if process_this_frame:
-        # Find all the faces and face encodings in the current frame of video
-        face_locations = face_recognition.face_locations(rgb_small_frame)
-        face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-
-        face_names = []
-        for face_encoding in face_encodings:
-            # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
-
-            # # If a match was found in known_face_encodings, just use the first one.
-            # if True in matches:
-            #     first_match_index = matches.index(True)
-            #     name = known_face_names[first_match_index]
-
-            # Or instead, use the known face with the smallest distance to the new face
-            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-            best_match_index = np.argmin(face_distances)
-            if matches[best_match_index]:
-                name = known_face_names[best_match_index]
-
-            face_names.append(name)
-
-    process_this_frame = not process_this_frame
-
-
-    # Display the results
-    for (top, right, bottom, left), name in zip(face_locations, face_names):
-        # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
-
-        # Draw a box around the face
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-        # Draw a label with a name below the face
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-
-    # Display the resulting image
-    cv2.imshow('Video', frame)
-
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    ret, frame = cam.read()
+    if not ret:
+        print("failed to grab frame")
         break
+    cv2.imshow("TFLite Inference", frame)
 
-# Release handle to the webcam
-video_capture.release()
+    k = cv2.waitKey(1)
+    if k % 256 == 27:
+        # ESC pressed
+        print("Escape hit, closing...")
+        break
+    elif k % 256 == 32:
+        # SPACE pressed
+        # frame = cv2.resize(frame, dsize=(32, 32), interpolation=cv2.INTER_AREA)
+        # face_detector(frame)
+        if not os.path.isdir("webcam_lib"):
+            os.mkdir("webcam_lib")
+        img_name = "webcam_lib/opencv_frame_{}.png".format(img_counter)
+        cv2.imwrite(img_name, frame)
+        print("{} written!".format(img_name))
+        img_counter += 1
+        result = face_detector(img_name)
+        cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+        print(result)
+        cv2.imwrite(img_name, frame)
+
+cam.release()
+
 cv2.destroyAllWindows()
