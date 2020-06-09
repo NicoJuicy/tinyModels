@@ -54,6 +54,7 @@ elif platform == "tflite":
 
     positives = 0
     negatives = 0
+    neutrals = 0
 
     for one_image in os.listdir("dataset/test"):
         if (positives + negatives) < 200:
@@ -72,7 +73,9 @@ elif platform == "tflite":
            positives += 1
         elif output_data[0, 0] <= 0.1 and output_data[0, 1] >= 0.9:
             negatives += 1
+        else:
+            neutrals += 1
 
-    print(f"Positives: {positives / (positives + negatives) * 100}%")
-    print(f"Negatives: {negatives / (positives + negatives) * 100}%")
+    print(f"Positives: {positives / (positives + negatives + neutrals) * 100}%")
+    print(f"Negatives: {negatives / (positives + negatives + neutrals) * 100}%")
 
