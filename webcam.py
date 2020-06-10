@@ -11,7 +11,9 @@ img_counter = 0
 font = cv2.FONT_HERSHEY_SIMPLEX
 bottomLeftCornerOfText = (10,30)
 fontScale = 1
-fontColor = (255,255,255)
+fontColor_green = (0,128,0)
+fontColor_red = (0,0,128)
+fontColor_yellow = (255,255,0)
 lineType = 2
 
 def face_detector(image):
@@ -32,7 +34,7 @@ def face_detector(image):
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]["index"])
 
-    threshold = 0.9
+    threshold = 0.4
 
     if output_data[0, 0] >= threshold:
         print("Positive: ", output_data)
@@ -71,9 +73,14 @@ while True:
         print("{} written!".format(img_name))
         img_counter += 1
         result = face_detector(img_name)
-        cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
+        if result == "POSITIVE":
+            cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
+        elif result == "NEGATIVE":
+            cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
+        else:
+            cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor_yellow, lineType)
         print(result)
-        # cv2.imwrite(img_name, frame)
+        cv2.imwrite(img_name, frame)
 
 cam.release()
 
