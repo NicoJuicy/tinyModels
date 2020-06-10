@@ -28,7 +28,7 @@ parser.add_argument(
     type=int,
     help="Type in how many samples you want in one training batch "
          "default is 64",
-    default=64,
+    default=20,
 )
 
 parser.add_argument(
@@ -36,7 +36,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=20,
+    default=30,
 )
 parser.add_argument(
     "-m",
@@ -47,16 +47,21 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def load_dataset(dataset_path="export/dataset.npy", labels_path="export/labels.npy", training_perc=1):
+def load_dataset(dataset_path="export/dataset.npy", labels_path="export/labels.npy", training_perc=0.75):
     # (trainX, trainY), (testX, testY) = cifar10.load_data()
     dataset = np.load(dataset_path)
     labels = np.load(labels_path)
     dataset_size = np.shape(dataset)[0]
     training_len = floor(dataset_size * training_perc)
-    trainX = dataset[0:training_len, :, :, :]
-    testX = dataset[0:training_len, :, :, :]
+    trainX = dataset[0:training_len]
+    testX = dataset[-(dataset_size-training_len):]
     trainY = (labels[0:training_len])
-    testY = (labels[0:training_len])
+    testY = (labels[-(dataset_size-training_len):])
+
+    print(np.shape(trainX))
+    print(np.shape(testX))
+    print(np.shape(trainY))
+    print(np.shape(testY))
 
     # trainY = to_categorical(trainY)
     # testY = to_categorical(testY)
