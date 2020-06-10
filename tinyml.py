@@ -36,7 +36,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=30,
+    default=10,
 )
 parser.add_argument(
     "-m",

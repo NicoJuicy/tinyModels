@@ -7,31 +7,40 @@ from tensorflow.keras.preprocessing.image import load_img
 orig_path = "dataset/lfwild"
 
 saved = 0
+saved_backgr = 0
 width = 32
 height = 32
-pic_array = np.empty((13233 * 2, width, height, 3), dtype=np.uint8)
-labels_array = np.empty((13233 * 2, 1))
+negatives = 6000
+pic_array = np.empty((13633 + negatives, width, height, 3), dtype=np.uint8)
+labels_array = np.empty((13633 + negatives, 1))
+
+for pic in os.listdir("dataset/negatives"):
+    img_array = load_img(f"dataset/negatives/{pic}", target_size=(32, 32), interpolation="nearest")
+    pic_array[13633 + saved_backgr, :, :, :] = img_to_array(img_array)
+    labels_array[13633 + saved_backgr] = 0
+
+    saved_backgr += 1
 
 for folder in os.listdir(orig_path):
     for pic in os.listdir(f"{orig_path}/{folder}"):
         img_array = load_img(f"{orig_path}/{folder}/{pic}", target_size=(32,32), interpolation="nearest")
         pic_array[saved, :, :, :] = img_to_array(img_array)
+        labels_array[saved] = 1
 
 
         img_array_full = PIL.Image.open(f"{orig_path}/{folder}/{pic}")
         img_array_background = img_to_array(img_array_full)
         img_array_background = img_array_background[-32:, :32, :]
 
-        print(np.shape(img_array_background))
-        pic_array[saved + 13233, :, :, :] = img_to_array(img_array_background)
+        if saved_backgr < negatives:
+            pic_array[saved_backgr + 13633, :, :, :] = img_to_array(img_array_background)
+            labels_array[13633 + saved_backgr] = 0
 
         saved += 1
+        saved_backgr += 1
 
-for i in range(13233):
-    labels_array[i, :] = 1
-    labels_array[i + 13233, :] = 0
 
-print(f"Saved {saved} image samples")
+print(f"Saved {saved + saved_backgr} image samples")
 
 if not os.path.isdir("export"):
     os.mkdir("export")

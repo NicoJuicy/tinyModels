@@ -1,7 +1,7 @@
-import cv2, os
+import cv2, os, PIL
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
 
 
 cam = cv2.VideoCapture(0)
@@ -22,9 +22,9 @@ def face_detector(image):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    input_shape = input_details[0]["shape"]
+    # input_shape = input_details[0]["shape"]
 
-    img1 = load_img(image, target_size=(32, 32))
+    img1 = load_img(image, target_size=(32, 32), interpolation="nearest")
     input_data = np.empty((1, 32, 32, 3), dtype=np.float32)
     img = img_to_array(img1)
     input_data[0, :, :, :] = img
@@ -64,13 +64,16 @@ while True:
         if not os.path.isdir("webcam_lib"):
             os.mkdir("webcam_lib")
         img_name = "webcam_lib/opencv_frame_{}.png".format(img_counter)
+        # img_array_cropped = img_to_array(frame)
+        frame = frame[80:-80, 160:480, :]
+        # img_array_cropped = array_to_img(img_array_cropped)
         cv2.imwrite(img_name, frame)
         print("{} written!".format(img_name))
         img_counter += 1
         result = face_detector(img_name)
         cv2.putText(frame, result, bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
         print(result)
-        cv2.imwrite(img_name, frame)
+        # cv2.imwrite(img_name, frame)
 
 cam.release()
 
