@@ -4,11 +4,12 @@ from matplotlib import pyplot
 from math import floor
 import tensorflow_model_optimization as tfmot
 import tensorflow as tf
-from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.utils import to_categorical
-from models.vgg_3 import vgg_3
-from models.squeezenet import SqueezeNet
-from models.squeezenet_opt import squeezenet
+# from tensorflow.keras.datasets import cifar10
+# from tensorflow.keras.utils import to_categorical
+# from models.vgg_3 import vgg_3
+# from models.squeezenet import SqueezeNet
+# from models.squeezenet_opt import squeezenet
+from models.squeezenet_tiny import squeezenet
 
 
 parser = argparse.ArgumentParser(
@@ -28,7 +29,7 @@ parser.add_argument(
     type=int,
     help="Type in how many samples you want in one training batch "
          "default is 64",
-    default=100,
+    default=512,
 )
 
 parser.add_argument(
@@ -36,7 +37,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=8,
+    default=10,
 )
 parser.add_argument(
     "-m",
@@ -105,26 +106,28 @@ def run_training(epochs, batch_size):
     quantized_model = quantize_model(model)
     quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-    history = model.fit(
-        trainX,
-        trainY,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(testX, testY),
-        shuffle=True
-    )
+    save_keras_full = True
+    if save_keras_full:
+        history = model.fit(
+            trainX,
+            trainY,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(testX, testY),
+            shuffle=True
+        )
 
-    model.summary()
-    results = model.evaluate(testX, testY)
-    print("Loss, Accuracy:", results)
-    summarize_diagnostics(history)
+        model.summary()
+        results = model.evaluate(testX, testY)
+        print("Loss, Accuracy:", results)
+        summarize_diagnostics(history)
 
-    # saving this stuff
-    model_structure = model.to_json()
-    f = pathlib.Path("model_structure.json")
-    f.write_text(model_structure)
-    model.save_weights("model_weights.h5")
-    model.save("model_full.h5")
+        # saving this stuff
+        model_structure = model.to_json()
+        f = pathlib.Path("model_structure.json")
+        f.write_text(model_structure)
+        model.save_weights("model_weights.h5")
+        model.save("model_full.h5")
 
     history_q = quantized_model.fit(
         trainX,
