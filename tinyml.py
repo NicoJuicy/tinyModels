@@ -4,8 +4,8 @@ from matplotlib import pyplot
 from math import floor
 import tensorflow_model_optimization as tfmot
 import tensorflow as tf
-# from tensorflow.keras.datasets import cifar10
-# from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.datasets import cifar10, cifar100
+from tensorflow.keras.utils import to_categorical
 # from models.vgg_3 import vgg_3
 # from models.squeezenet import SqueezeNet
 # from models.squeezenet_opt import squeezenet
@@ -29,7 +29,7 @@ parser.add_argument(
     type=int,
     help="Type in how many samples you want in one training batch "
          "default is 64",
-    default=512,
+    default=256,
 )
 
 parser.add_argument(
@@ -37,7 +37,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=10,
+    default=50,
 )
 parser.add_argument(
     "-m",
@@ -49,23 +49,35 @@ args = parser.parse_args()
 
 
 def load_dataset(dataset_path="export/dataset.npy", labels_path="export/labels.npy", training_perc=0.8):
-    # (trainX, trainY), (testX, testY) = cifar10.load_data()
-    dataset = np.load(dataset_path)
-    labels = np.load(labels_path)
-    dataset_size = np.shape(dataset)[0]
-    training_len = floor(dataset_size * training_perc)
-    trainX = dataset[0:training_len]
-    testX = dataset[training_len:dataset_size]
-    trainY = labels[0:training_len]
-    testY = labels[training_len:dataset_size]
+    trainX = np.empty((100000 + 11633 + 610126, 32, 32, 3))
+    trainY = np.empty((100000 + 11633 + 610126, 1))
+    testX = np.empty((20000 + 2000 + 11000, 32, 32, 3))
+    testY = np.empty((20000 + 2000 + 11000, 1))
+    (trainX_10, trainY_10), (testX_10, testY_10) = cifar10.load_data()
+    (trainX_100, trainY_100), (testX_100, testY_100) = cifar100.load_data()
+    trainY_10 = to_categorical(trainY_10)
+    testY_10 = to_categorical(testY_10)
+    trainY_100 = to_categorical(trainY_100)
+    testY_100 = to_categorical(testY_100)
+    dataset_lfwild = np.load("export/dataset_lfwild.npy")
+    dataset_aligned_images = np.load("export/dataset_aligned_images.npy")
+    trainX = np.row_stack((trainX_10, trainX_100, dataset_lfwild[0:11633], dataset_aligned_images[0:610126]))
+    trainY = np.row_stack((np.zeros((50000, 1)), np.zeros((50000, 1)), np.ones((11633, 1)), np.ones((610126, 1))))
+    testX = np.row_stack((testX_10, testX_100, dataset_lfwild[11633:], dataset_aligned_images[610126:]))
+    testY = np.row_stack((np.zeros((10000, 1)), np.zeros((10000, 1)), np.ones((2000, 1)), np.ones((11000, 1))))
+    # labels = np.load(labels_path)
+    # dataset_size = np.shape(dataset)[0]
+    # training_len = floor(dataset_size * training_perc)
+    # trainX = dataset[0:training_len]
+    # testX = dataset[training_len:dataset_size]
+    # trainY = labels[0:training_len]
+    # testY = labels[training_len:dataset_size]
 
     print(np.shape(trainX))
     print(np.shape(testX))
     print(np.shape(trainY))
     print(np.shape(testY))
 
-    # trainY = to_categorical(trainY)
-    # testY = to_categorical(testY)
     return trainX, trainY, testX, testY
 
 
@@ -100,7 +112,8 @@ def run_training(epochs, batch_size):
     trainX, testX = prep_pixels(trainX, testX)
     # model = vgg_3()
     # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
-    model = squeezenet(classes=2)
+    # model = squeezenet(classes=2) # face det
+    model = squeezenet(classes=2) # for cifar 10
     model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
     quantize_model = tfmot.quantization.keras.quantize_model
     quantized_model = quantize_model(model)

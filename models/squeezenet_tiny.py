@@ -1,5 +1,5 @@
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Activation, Dropout, Conv2D, MaxPooling2D, GlobalAveragePooling2D, concatenate
+from tensorflow.keras.layers import Input, Activation, Dropout, Conv2D, MaxPooling2D, GlobalAveragePooling2D, concatenate, Reshape
 
 # thanks to https://github.com/zshancock/SqueezeNet_vs_CIFAR10/blob/master/squeezenet_architecture.py
 
@@ -29,8 +29,8 @@ def fire_mod(x, fire_id, squeeze=16, expand=64):
 
 def squeezenet(input_shape=(32, 32, 3), classes=10):
     img_input = Input(shape=input_shape)
-
-    x = Conv2D(64, (3, 3), strides=(2, 2), padding='valid', name='conv')(img_input)
+    x = Reshape(target_shape=input_shape)(img_input)
+    x = Conv2D(64, (3, 3), strides=(2, 2), padding='valid', name='conv')(x)
     x = Activation('relu', name='relu_conv1')(x)
     x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), name='pool1')(x)
 
