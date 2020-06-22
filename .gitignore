@@ -8,7 +8,7 @@
 dataset
 export
 darknet_tiny.py_plot.png
-webcam_lib
+webcam_results
 
 widgets
 test.py

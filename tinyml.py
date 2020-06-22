@@ -6,10 +6,12 @@ import tensorflow_model_optimization as tfmot
 import tensorflow as tf
 from tensorflow.keras.datasets import cifar10, cifar100
 from tensorflow.keras.utils import to_categorical
-# from models.vgg_3 import vgg_3
+from tensorflow.keras.optimizers import Adam
+from models.vgg_3 import vgg_3
 # from models.squeezenet import SqueezeNet
 # from models.squeezenet_opt import squeezenet
 from models.squeezenet_tiny import squeezenet
+from models.lenet import LeNet
 
 
 parser = argparse.ArgumentParser(
@@ -29,7 +31,7 @@ parser.add_argument(
     type=int,
     help="Type in how many samples you want in one training batch "
          "default is 64",
-    default=256,
+    default=128,
 )
 
 parser.add_argument(
@@ -37,7 +39,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=50,
+    default=1,
 )
 parser.add_argument(
     "-m",
@@ -61,10 +63,14 @@ def load_dataset(dataset_path="export/dataset.npy", labels_path="export/labels.n
     testY_100 = to_categorical(testY_100)
     dataset_lfwild = np.load("export/dataset_lfwild.npy")
     dataset_aligned_images = np.load("export/dataset_aligned_images.npy")
-    trainX = np.row_stack((trainX_10, trainX_100, dataset_lfwild[0:11633], dataset_aligned_images[0:610126]))
-    trainY = np.row_stack((np.zeros((50000, 1)), np.zeros((50000, 1)), np.ones((11633, 1)), np.ones((610126, 1))))
-    testX = np.row_stack((testX_10, testX_100, dataset_lfwild[11633:], dataset_aligned_images[610126:]))
-    testY = np.row_stack((np.zeros((10000, 1)), np.zeros((10000, 1)), np.ones((2000, 1)), np.ones((11000, 1))))
+    # trainX = np.row_stack((trainX_10, trainX_100, dataset_lfwild[0:11633], dataset_aligned_images[0:610126]))
+    # trainY = np.row_stack((np.zeros((50000, 1)), np.zeros((50000, 1)), np.ones((11633, 1)), np.ones((610126, 1))))
+    # testX = np.row_stack((testX_10, testX_100, dataset_lfwild[11633:], dataset_aligned_images[610126:]))
+    # testY = np.row_stack((np.zeros((10000, 1)), np.zeros((10000, 1)), np.ones((2000, 1)), np.ones((11000, 1))))
+    trainX = np.row_stack((trainX_10, dataset_lfwild[0:11633]))
+    trainY = np.row_stack((np.zeros((50000, 1)), np.ones((11633, 1))))
+    testX = np.row_stack((testX_10, dataset_lfwild[11633:]))
+    testY = np.row_stack((np.zeros((10000, 1)), np.ones((2000, 1))))
     # labels = np.load(labels_path)
     # dataset_size = np.shape(dataset)[0]
     # training_len = floor(dataset_size * training_perc)
@@ -108,18 +114,22 @@ def summarize_diagnostics(history):
 
 
 def run_training(epochs, batch_size):
+    save_keras_full = False
     trainX, trainY, testX, testY = load_dataset()
-    trainX, testX = prep_pixels(trainX, testX)
-    # model = vgg_3()
-    # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
-    # model = squeezenet(classes=2) # face det
-    model = squeezenet(classes=2) # for cifar 10
-    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-    quantize_model = tfmot.quantization.keras.quantize_model
-    quantized_model = quantize_model(model)
-    quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+    # trainX, testX = prep_pixels(trainX, testX)
 
-    save_keras_full = True
+    quantized_model = LeNet.build(width=32, height=32, depth=3, classes=2)
+
+
+    # quantize_model = tfmot.quantization.keras.quantize_model
+    # quantized_model = quantize_model(model)
+    # quantized_model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+    EPOCHS = 55
+    INIT_LR = 1e-3
+    opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
+    quantized_model.compile(loss="binary_crossentropy", optimizer=opt,metrics=["accuracy"])
+
+
     if save_keras_full:
         history = model.fit(
             trainX,
@@ -155,18 +165,6 @@ def run_training(epochs, batch_size):
     results = quantized_model.evaluate(testX, testY)
     print("Loss, Accuracy:", results)
     summarize_diagnostics(history_q)
-
-    # saving this other stuff
-    q_model_structure = quantized_model.to_json()
-    f = pathlib.Path("q_model_structure.json")
-    f.write_text(q_model_structure)
-    model.save_weights("q_model_weights.h5")
-
-    # def representative_dataset_gen():
-    #     for image in images_test:
-    #         array = np.array(image)
-    #         array = np.expand_dims(array, axis=0)
-    #         yield ([array])
 
     converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]

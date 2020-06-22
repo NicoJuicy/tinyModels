@@ -35,10 +35,10 @@ def squeezenet(input_shape=(32, 32, 3), classes=10):
     x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), name='pool1')(x)
 
     x = fire_mod(x, fire_id=2, squeeze=16, expand=64)
-    # x = fire_mod(x, fire_id=3, squeeze=16, expand=64)
+    x = fire_mod(x, fire_id=3, squeeze=16, expand=64)
 
     x = fire_mod(x, fire_id=4, squeeze=32, expand=128)
-    # x = fire_mod(x, fire_id=5, squeeze=32, expand=128)
+    x = fire_mod(x, fire_id=5, squeeze=32, expand=128)
     x = Dropout(0.5, name='drop9')(x)
 
     x = Conv2D(classes, (1, 1), padding='valid', name='conv10')(x)

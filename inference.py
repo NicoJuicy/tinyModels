@@ -70,6 +70,6 @@ elif platform == "tflite":
             else:
                 neutrals += 1
                 print("Not sure: ", one_image, output_data)
-
-    print(f"Positives: {positives / (positives + negatives + neutrals) * 100}%")
-    print(f"Negatives: {negatives / (positives + negatives + neutrals) * 100}%")
+    #
+    # print(f"Positives: {positives / (positives + negatives + neutrals) * 100}%")
+    # print(f"Negatives: {negatives / (positives + negatives + neutrals) * 100}%")
