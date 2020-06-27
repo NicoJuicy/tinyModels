@@ -2,7 +2,7 @@ import cv2, os, PIL
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
-dimension = (75, 75)
+dimension = (32, 32)
 grayscale = True
 
 
@@ -48,10 +48,10 @@ def face_detector(image):
     threshold_object = 0.5
 
     if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
-        if output_data[0, 0] >= threshold_face and output_data[0, 1] <= threshold_object:
+        if output_data[0, 1] >= threshold_face and output_data[0, 0] <= threshold_object:
             print("Positive: ", output_data)
             cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
-        elif output_data[0, 0] <= threshold_face and output_data[0, 1] >= threshold_object:
+        elif output_data[0, 1] <= threshold_face and output_data[0, 0] >= threshold_object:
             print("Negative: ", output_data)
             cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
     else:

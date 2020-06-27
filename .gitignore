@@ -3,7 +3,6 @@
 .vscode
 *.json
 *.h5
-*.tflite
 *.npy
 dataset
 export
