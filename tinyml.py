@@ -11,6 +11,7 @@ from models.vgg_3 import vgg_3
 from models.squeezenet import SqueezeNet
 from models.squeezenet_opt import squeezenet
 from imutils import paths
+from models.lenet import LeNet
 
 
 parser = argparse.ArgumentParser(
@@ -30,7 +31,7 @@ parser.add_argument(
     type=int,
     help="Type in how many samples you want in one training batch "
          "default is 64",
-    default=100,
+    default=512,
 )
 
 parser.add_argument(
@@ -38,7 +39,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=8,
+    default=1,
 )
 parser.add_argument(
     "-m",
@@ -54,20 +55,35 @@ parser.add_argument(
     default="dataset/teo_generated",
 )
 
+parser.add_argument(
+    "-g",
+    "--grayscale",
+    action="store_false"
+)
+
+parser.add_argument(
+    "-w",
+    "--width",
+    type=int,
+    help="Width of images to work with",
+    default=100
+)
+
+parser.add_argument(
+    "-ht",
+    "--height",
+    type=int,
+    help="Height of images to work with",
+    default=100
+)
+
 args = parser.parse_args()
+train_keras = False
+grayscale = args.grayscale
+dimension = (args.width, args.height)
+print(f"Will work with images of size {dimension} in grayscale-{grayscale}")
 
-
-def load_dataset(labels_path="export/labels.npy", training_perc=0.8):
-    # (trainX, trainY), (testX, testY) = cifar10.load_data()
-    # dataset = np.load(dataset_path)
-    # labels = np.load(labels_path)
-    # dataset_size = np.shape(dataset)[0]
-    # training_len = floor(dataset_size * training_perc)
-    # trainX = dataset[0:training_len]
-    # testX = dataset[training_len:dataset_size]
-    # trainY = labels[0:training_len]
-    # testY = labels[training_len:dataset_size]
-
+def load_dataset():
     data = []
     labels = []
 
@@ -78,12 +94,19 @@ def load_dataset(labels_path="export/labels.npy", training_perc=0.8):
     dataset_size = len(image_paths)
     count = 0
     for image_path in image_paths:
-        image = cv2.imread(image_path)
-        image = cv2.resize(image, (32, 32))
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE) if grayscale else cv2.imread(image_path)
+        image = cv2.resize(image, dimension)
         image = img_to_array(image)
         data.append(image)
         label = image_path.split(os.path.sep)[1]
-        label = 1 if label == "positives" else 0
+        if label == "positives":
+            label = 1
+        elif label == "negatives":
+            label = 0
+        else:
+            print("dubious label")
+            raise Exception
+
         labels.append(label)
         count += 1
         print(f"Loaded {count}/{dataset_size} images", end="\r")
@@ -93,8 +116,8 @@ def load_dataset(labels_path="export/labels.npy", training_perc=0.8):
 
     (trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.25, random_state=42)
 
-    trainY = to_categorical(trainY, num_classes=2)
-    testY = to_categorical(testY, num_classes=2)
+    # trainY = to_categorical(trainY, num_classes=2)
+    # testY = to_categorical(testY, num_classes=2)
 
     aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
                              height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
@@ -107,16 +130,6 @@ def load_dataset(labels_path="export/labels.npy", training_perc=0.8):
     print(f"testY: {np.shape(testY)}")
 
     return trainX, trainY, testX, testY, aug
-
-
-def prep_pixels(train, test):
-    # converting from uint8 to float32
-    train_norm = train.astype("float32")
-    test_norm = test.astype("float32")
-    # normalizing to range 0 to 1
-    train_norm = train_norm / 255.0
-    test_norm = test_norm / 255.0
-    return train_norm, test_norm
 
 
 def summarize_diagnostics(history):
@@ -137,36 +150,39 @@ def summarize_diagnostics(history):
 
 def run_training(epochs, batch_size):
     trainX, trainY, testX, testY, aug = load_dataset()
-    trainX, testX = prep_pixels(trainX, testX)
-    # model = vgg_3()
-    # model = SqueezeNet(nb_classes=10, inputs=(32, 32, 3))
-    model = squeezenet(classes=2)
-    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-    print(f"Compiled model")
+    model = LeNet.build(classes=2, width=dimension[0], height=dimension[1], depth=1 if grayscale == True else 3)
+    if train_keras == True:
+        model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
     quantize_model = tfmot.quantization.keras.quantize_model
     quantized_model = quantize_model(model)
     quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-    history = model.fit(
-        trainX,
-        trainY,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(testX, testY),
-        shuffle=True
-    )
+    print(f"Compiled model")
 
-    model.summary()
-    results = model.evaluate(testX, testY)
-    print("Loss, Accuracy:", results)
-    summarize_diagnostics(history)
+    if train_keras == True:
+        history = model.fit(
+            trainX,
+            trainY,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(testX, testY),
+            shuffle=True
+        )
 
-    # saving this stuff
-    model_structure = model.to_json()
-    f = pathlib.Path("model_structure.json")
-    f.write_text(model_structure)
-    model.save_weights("model_weights.h5")
-    model.save("model_full.h5")
+        model.summary()
+        results = model.evaluate(testX, testY)
+        print("Loss, Accuracy:", results)
+        summarize_diagnostics(history)
+
+        # saving this stuff
+        model_structure = model.to_json()
+        f = pathlib.Path("model_structure.json")
+        f.write_text(model_structure)
+        model.save_weights("model_weights.h5")
+        model.save("model_full.h5")
+
+    print("Starting training on quantized model")
 
     history_q = quantized_model.fit(
         trainX,
@@ -188,11 +204,6 @@ def run_training(epochs, batch_size):
     f.write_text(q_model_structure)
     model.save_weights("q_model_weights.h5")
 
-    # def representative_dataset_gen():
-    #     for image in images_test:
-    #         array = np.array(image)
-    #         array = np.expand_dims(array, axis=0)
-    #         yield ([array])
 
     converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
