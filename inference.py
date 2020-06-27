@@ -4,6 +4,8 @@ import os
 from matplotlib import pyplot
 import cv2
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+dimension = (75, 75)
+grayscale = True
 
 # platform = "keras"
 platform = "tflite"
@@ -23,7 +25,7 @@ if platform == "keras":
     for one_image in os.listdir("dataset/test"):
         if (positives + negatives) < 50:
             img1 = load_img(f"dataset/test/{one_image}")
-            img_array = np.empty((1, 32, 32, 3), dtype=np.uint8)
+            img_array = np.empty((1, dimension[0], dimension[1], 1 if grayscale else 3), dtype=np.uint8)
             img = img_to_array(img1)
             img_array[0, :, :, :] = img
             result = model.predict(img_array)
@@ -53,8 +55,9 @@ elif platform == "tflite":
     for one_image in os.listdir("dataset/test"):
         if (positives + negatives) < 200:
 
-            img1 = load_img(f"dataset/test/{one_image}", target_size=(32, 32))
-            input_data = np.empty((1, 32, 32, 3), dtype=np.float32)
+            img1 = cv2.imread(f"dataset/test/{one_image}", cv2.IMREAD_GRAYSCALE) if grayscale else cv2.imread(f"dataset/test/{one_image}")
+            img1 = cv2.resize(img1, dimension)
+            input_data = np.empty((1, dimension[0], dimension[1], 1 if grayscale else 3), dtype=np.float32)
             img = img_to_array(img1)
             input_data[0, :, :, :] = img
             interpreter.set_tensor(input_details[0]["index"], input_data)

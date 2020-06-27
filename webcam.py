@@ -2,6 +2,8 @@ import cv2, os, PIL
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
+dimension = (75, 75)
+grayscale = True
 
 
 cam = cv2.VideoCapture(0)
@@ -17,7 +19,8 @@ fontColor_yellow = (255,255,0)
 lineType = 2
 
 model_path = "tinyFace.tflite"
-input_image_dim = (32, 32, 3)
+input_image_dim = (dimension[0], dimension[1], 1 if grayscale else 0)
+print(f"Working with images in {input_image_dim}")
 
 def face_detector(image):
     interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -26,7 +29,12 @@ def face_detector(image):
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    img1 = load_img(image, target_size=(input_image_dim[0], input_image_dim[1]), interpolation="nearest")
+    # img1 = load_img(image, target_size=(input_image_dim[0], input_image_dim[1]), interpolation="nearest")
+
+    img1 = cv2.imread(image, cv2.IMREAD_GRAYSCALE) if grayscale else cv2.imread(image)
+    img1 = cv2.resize(img1, (input_image_dim[0], input_image_dim[1]))
+    img1 = img_to_array(img1)
+
     input_data = np.empty((1, input_image_dim[0], input_image_dim[1], input_image_dim[2]), dtype=np.float32)
     img = img_to_array(img1)
     input_data[0, :, :, :] = img
@@ -39,12 +47,13 @@ def face_detector(image):
     threshold_face = 0.7
     threshold_object = 0.5
 
-    if output_data[0, 0] >= threshold_face and output_data[0, 1] <= threshold_object:
-        print("Positive: ", output_data)
-        cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
-    elif output_data[0, 0] <= threshold_face and output_data[0, 1] >= threshold_object:
-        print("Negative: ", output_data)
-        cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
+    if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
+        if output_data[0, 0] >= threshold_face and output_data[0, 1] <= threshold_object:
+            print("Positive: ", output_data)
+            cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
+        elif output_data[0, 0] <= threshold_face and output_data[0, 1] >= threshold_object:
+            print("Negative: ", output_data)
+            cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
     else:
         print("Not sure: ", output_data)
         cv2.putText(processed_image, "?", bottomLeftCornerOfText, font, fontScale, fontColor_yellow, lineType)

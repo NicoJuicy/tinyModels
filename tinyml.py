@@ -66,7 +66,7 @@ parser.add_argument(
     "--width",
     type=int,
     help="Width of images to work with",
-    default=100
+    default=75
 )
 
 parser.add_argument(
@@ -74,7 +74,7 @@ parser.add_argument(
     "--height",
     type=int,
     help="Height of images to work with",
-    default=100
+    default=75
 )
 
 args = parser.parse_args()
