@@ -4,7 +4,7 @@ import os
 from matplotlib import pyplot
 import cv2
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-dimension = (75, 75)
+dimension = (32, 32)
 grayscale = True
 
 # platform = "keras"
@@ -43,7 +43,7 @@ if platform == "keras":
 
 # For running TFlite reduced-size model inference
 elif platform == "tflite":
-    model_path = "tinyFace.tflite"
+    model_path = "squeezenet_opt.tflite"
     interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 

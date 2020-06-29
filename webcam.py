@@ -18,7 +18,7 @@ fontColor_red = (0,0,128)
 fontColor_yellow = (255,255,0)
 lineType = 2
 
-model_path = "tinyFace.tflite"
+model_path = "squeezenet_opt.tflite"
 input_image_dim = (dimension[0], dimension[1], 1 if grayscale else 0)
 print(f"Working with images in {input_image_dim}")
 
@@ -47,7 +47,7 @@ def face_detector(image):
     threshold_face = 0.7
     threshold_object = 0.5
 
-    if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
+    if output_data[0, 0] >= 0.0001 and output_data[0, 1] >= 0.0001:
         if output_data[0, 1] >= threshold_face and output_data[0, 0] <= threshold_object:
             print("Positive: ", output_data)
             cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
@@ -82,6 +82,7 @@ while True:
 
         frame = cv2.resize(frame, (input_image_dim[0], input_image_dim[1]), interpolation=cv2.INTER_AREA)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = cv2.normalize(frame, None, alpha=0, beta=10, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
         cv2.imwrite(img_name, frame)
         img_counter += 1
         face_detector(img_name)

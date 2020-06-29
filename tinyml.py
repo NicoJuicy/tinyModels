@@ -5,10 +5,8 @@ from matplotlib import pyplot
 import tensorflow_model_optimization as tfmot
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from models.vgg_3 import vgg_3
-from models.squeezenet import SqueezeNet
 from models.squeezenet_opt import squeezenet
 from imutils import paths
 from models.lenet import LeNet
@@ -38,13 +36,13 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=3,
+    default=2,
 )
 parser.add_argument(
     "-m",
     "--model",
-    help="Choose model to be used for training: [vgg_3][squeezenet_full][squeezenet_simplified][squeezenet_quantized]",
-    default="vgg_3",
+    help="Choose model to be used for training: [vgg_3][squeezenet_opt][lenet]",
+    default="squeezenet_opt",
 )
 
 parser.add_argument(
@@ -80,7 +78,8 @@ args = parser.parse_args()
 train_keras = False
 grayscale = args.grayscale
 dimension = (args.width, args.height)
-print(f"Will work with images of size {dimension} in grayscale-{grayscale}")
+to_print = "grayscale" if grayscale else "RGB"
+print(f"Will work with images of size {dimension} in {to_print}")
 
 def load_dataset():
     data = []
@@ -113,7 +112,7 @@ def load_dataset():
     data = np.array(data, dtype="float") / 255.0
     labels = np.array(labels)
 
-    (trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.25, random_state=42)
+    (trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.15, random_state=42)
 
     # trainY = to_categorical(trainY, num_classes=2)
     # testY = to_categorical(testY, num_classes=2)
@@ -149,7 +148,18 @@ def summarize_diagnostics(history):
 
 def run_training(epochs, batch_size):
     trainX, trainY, testX, testY, aug = load_dataset()
-    model = LeNet.build(classes=2, width=dimension[0], height=dimension[1], depth=1 if grayscale == True else 3)
+    model = args.model
+    if args.model == "squeezenet_opt":
+        model = squeezenet(classes=2, input_shape=(dimension[0], dimension[1], 1 if grayscale else 3))
+    elif args.model == "vgg_3":
+        model = vgg_3(input=(dimension[0], dimension[1], 1 if grayscale else 3))
+    elif args.model == "lenet":
+        model = LeNet.build(classes=2, width=dimension[0], height=dimension[1], depth=1 if grayscale else 3)
+    else:
+        print("No valid model name given. Will default to squeezenet")
+        model = squeezenet(classes=2, input_shape=(dimension[0], dimension[1], 1 if grayscale else 3))
+
+    print(f"Using {args.model}")
     if train_keras == True:
         model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
@@ -215,7 +225,7 @@ def run_training(epochs, batch_size):
     tflite_model = converter.convert()
 
 
-    open("tinyFace.tflite", "wb").write(tflite_model)
+    open(f"{args.model}.tflite", "wb").write(tflite_model)
     # !xxd - i MNIST_full_quanitization.tflite > MNIST_full_quanitization.cc
 
     ## TODO: Pruning

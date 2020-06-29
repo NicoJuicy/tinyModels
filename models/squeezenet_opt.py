@@ -27,7 +27,7 @@ def fire_mod(x, fire_id, squeeze=16, expand=64):
 
     return x
 
-def squeezenet(input_shape=(32, 32, 3), classes=10):
+def squeezenet(input_shape=(32, 32, 3), classes=2):
     img_input = Input(shape=input_shape)
 
     x = Conv2D(64, (3, 3), strides=(2, 2), padding='valid', name='conv')(img_input)
