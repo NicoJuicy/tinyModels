@@ -36,7 +36,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=2,
+    default=3,
 )
 parser.add_argument(
     "-m",
@@ -63,7 +63,7 @@ parser.add_argument(
     "--width",
     type=int,
     help="Width of images to work with",
-    default=32
+    default=64
 )
 
 parser.add_argument(
@@ -71,7 +71,7 @@ parser.add_argument(
     "--height",
     type=int,
     help="Height of images to work with",
-    default=32
+    default=64
 )
 
 args = parser.parse_args()
@@ -94,6 +94,7 @@ def load_dataset():
     for image_path in image_paths:
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE) if grayscale else cv2.imread(image_path)
         image = cv2.resize(image, dimension)
+        # image = cv2.normalize(image, None, alpha=0, beta=10, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
         image = img_to_array(image)
         data.append(image)
         label = image_path.split(os.path.sep)[1]
@@ -226,7 +227,7 @@ def run_training(epochs, batch_size):
 
 
     open(f"{args.model}.tflite", "wb").write(tflite_model)
-    # !xxd - i MNIST_full_quanitization.tflite > MNIST_full_quanitization.cc
+    # !xxd - i squeezenet_opt.tflite > model_data.cc
 
     ## TODO: Pruning
 
