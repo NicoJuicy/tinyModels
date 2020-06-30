@@ -1,6 +1,7 @@
 import cv2, os, PIL
 import tensorflow as tf
 import numpy as np
+import time
 from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
 dimension = (64, 64)
 grayscale = True
@@ -44,23 +45,25 @@ def face_detector(image):
 
     processed_image = input_data[0,:,:,:]
 
-    threshold_face = 0.6
-    threshold_object = 0.4
+    print("                     OBJECT | FACE")
+    print(f"{output_data[0, 0] * 100} | {output_data[0, 1] * 100}")
 
-    if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
-        if output_data[0, 1] >= threshold_face and output_data[0, 0] <= threshold_object:
-            print("Positive: ", output_data)
-            cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
-        elif output_data[0, 0] <= threshold_face and output_data[0, 1] >= threshold_object:
-            print("Negative: ", output_data)
-            cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
-    else:
-        print("Negative: ", output_data)
-        cv2.putText(processed_image, "?", bottomLeftCornerOfText, font, fontScale, fontColor_yellow, lineType)
+    # if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
+    #     if output_data[0, 0] >= 0.9 and output_data[0, 0] <= 0.98 and output_data[0, 1] >= 0.15:
+    #         print("POSITIVE: ", output_data)
+    #         cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
+    #     else:
+    #         print("NEGATIVE: ", output_data)
+    #         cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
+    # else:
+    #     print("NEGATIVE: ", output_data)
+    #     cv2.putText(processed_image, "?", bottomLeftCornerOfText, font, fontScale, fontColor_yellow, lineType)
 
     cv2.imwrite(f"{image}", processed_image)
-    print(f"{img_name} written!")
+    # print(f"{img_name} written!")
 
+
+signal = False
 
 while True:
     ret, frame = cam.read()
@@ -69,12 +72,21 @@ while True:
         break
     cv2.imshow("TinyFace Webcam Demo", frame)
 
+    if not signal:
+        start = time.perf_counter()
+        signal = True
+        timer = False
+    if time.perf_counter() - start > 0.5:
+        timer = True
+        signal = False
+
     k = cv2.waitKey(1)
     if k % 256 == 27:
         # ESC pressed
         print("ESC hit, closing")
         break
-    elif k % 256 == 32:
+    # elif k % 256 == 32:
+    elif timer:
         if not os.path.isdir("webcam_results"):
             os.mkdir("webcam_results")
         img_name = "webcam_results/frame_{}.png".format(img_counter)
