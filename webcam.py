@@ -45,8 +45,12 @@ def face_detector(image):
 
     processed_image = input_data[0,:,:,:]
 
-    print("                     OBJECT | FACE")
+    print("          OBJECT | FACE")
     print(f"{output_data[0, 0] * 100} | {output_data[0, 1] * 100}")
+    if output_data[0, 0] * 100  < 90 and output_data[0, 1] * 100 > 10:
+        print("POSITIVE")
+    else:
+        print("NEGATIVE")
 
     # if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
     #     if output_data[0, 0] >= 0.9 and output_data[0, 0] <= 0.98 and output_data[0, 1] >= 0.15:
