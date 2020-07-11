@@ -217,8 +217,8 @@ def run_training(epochs, batch_size):
 
     converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-    # converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE] # experiment with this
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE] # experiment with this
+    # converter.optimizations = [tf.lite.Optimize.DEFAULT]
     # quantization
     converter.inference_input_type = tf.uint8
     converter.inference_output_type = tf.uint8
