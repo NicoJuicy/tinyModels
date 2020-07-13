@@ -28,7 +28,7 @@ parser.add_argument(
     "--batchsize",
     type=int,
     help="Type in how many samples you want in one training batch",
-    default=32,
+    default=16,
 )
 
 parser.add_argument(
@@ -36,7 +36,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=3,
+    default=1,
 )
 parser.add_argument(
     "-m",
@@ -63,7 +63,7 @@ parser.add_argument(
     "--width",
     type=int,
     help="Width of images to work with",
-    default=64
+    default=100
 )
 
 parser.add_argument(
@@ -71,7 +71,7 @@ parser.add_argument(
     "--height",
     type=int,
     help="Height of images to work with",
-    default=64
+    default=100
 )
 
 args = parser.parse_args()

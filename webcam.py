@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import time
 from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
-dimension = (64, 64)
+dimension = (100, 100)
 grayscale = True
 
 
@@ -19,7 +19,7 @@ fontColor_red = (0,0,128)
 fontColor_yellow = (255,255,0)
 lineType = 2
 
-model_path = "squeezenet_opt.tflite"
+model_path = "trained_models/squeezenet_opt.tflite"
 input_image_dim = (dimension[0], dimension[1], 1 if grayscale else 0)
 print(f"Working with images in {input_image_dim}")
 

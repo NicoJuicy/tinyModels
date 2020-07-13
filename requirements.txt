@@ -1,3 +1,10 @@
 numpy
-tensorflow
+tensorflow==2.1
+tensorflow_model_optimization
 black
+keras==2.3
+matplotlib
+imutils
+opencv-python
+sklearn
+pillow
