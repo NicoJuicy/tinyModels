@@ -47,24 +47,11 @@ def face_detector(image):
 
     print("          OBJECT | FACE")
     print(f"{output_data[0, 0] * 100} | {output_data[0, 1] * 100}")
-    if output_data[0, 0] * 100  < 90 and output_data[0, 1] * 100 > 10:
-        print("POSITIVE")
-    else:
-        print("NEGATIVE")
-
-    # if output_data[0, 0] >= 0.01 and output_data[0, 1] >= 0.01:
-    #     if output_data[0, 0] >= 0.9 and output_data[0, 0] <= 0.98 and output_data[0, 1] >= 0.15:
-    #         print("POSITIVE: ", output_data)
-    #         cv2.putText(processed_image, "P", bottomLeftCornerOfText, font, fontScale, fontColor_green, lineType)
-    #     else:
-    #         print("NEGATIVE: ", output_data)
-    #         cv2.putText(processed_image, "N", bottomLeftCornerOfText, font, fontScale, fontColor_red, lineType)
+    # if output_data[0, 0] * 100  < 50 and output_data[0, 1] * 100 > 97:
+    #     print("POSITIVE")
     # else:
-    #     print("NEGATIVE: ", output_data)
-    #     cv2.putText(processed_image, "?", bottomLeftCornerOfText, font, fontScale, fontColor_yellow, lineType)
-
-    cv2.imwrite(f"{image}", processed_image)
-    # print(f"{img_name} written!")
+    #     print("NEGATIVE")
+    # cv2.imwrite(f"{image}", processed_image)
 
 
 signal = False
