@@ -1,5 +1,5 @@
 numpy
-tensorflow==2.1
+tensorflow==2.1.2
 tensorflow_model_optimization
 black
 keras==2.3
