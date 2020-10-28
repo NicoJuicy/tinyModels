@@ -49,7 +49,7 @@ parser.add_argument(
     "-d",
     "--dataset",
     help="Path of dataset to be used for training",
-    default="dataset/teo_generated",
+    default="dataset/icloud_shared",
 )
 
 parser.add_argument(
@@ -75,7 +75,7 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-train_keras = False
+train_keras = True
 grayscale = args.grayscale
 dimension = (args.width, args.height)
 to_print = "grayscale" if grayscale else "RGB"
@@ -97,20 +97,26 @@ def load_dataset():
         # image = cv2.normalize(image, None, alpha=0, beta=10, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
         image = img_to_array(image)
         data.append(image)
-        label = image_path.split(os.path.sep)[1]
+        label = image_path.split(os.path.sep)[2]
         if label == "positives":
             label = 1
         elif label == "negatives":
             label = 0
         else:
-            print("dubious label")
-            raise Exception
+            label = image_path.split(os.path.sep)[3]
+            if label == "positives":
+                label = 1
+            elif label == "negatives":
+                label = 0
+            else:
+                print("dubious label")
+                raise Exception
 
         labels.append(label)
         count += 1
         print(f"Loaded {count}/{dataset_size} images", end="\r")
 
-    data = np.array(data, dtype="float") / 255.0
+    data = np.array(data, dtype="float32") / 255.0
     labels = np.array(labels)
 
     (trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.15, random_state=42)
@@ -192,37 +198,42 @@ def run_training(epochs, batch_size):
         model.save_weights("model_weights.h5")
         model.save("model_full.h5")
 
-    print("Starting training on quantized model")
+    else:
+        print("Starting training on quantized model")
 
-    history_q = quantized_model.fit(
-        trainX,
-        trainY,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(testX, testY),
-        shuffle=True
-    )
+        history_q = quantized_model.fit(
+            trainX,
+            trainY,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(testX, testY),
+            shuffle=True
+        )
 
-    quantized_model.summary()
-    results = quantized_model.evaluate(testX, testY)
-    print("Loss, Accuracy:", results)
-    summarize_diagnostics(history_q)
+        quantized_model.summary()
+        results = quantized_model.evaluate(testX, testY)
+        print("Loss, Accuracy:", results)
+        summarize_diagnostics(history_q)
 
-    # saving this other stuff
-    q_model_structure = quantized_model.to_json()
-    f = pathlib.Path("q_model_structure.json")
-    f.write_text(q_model_structure)
-    model.save_weights("q_model_weights.h5")
+        # saving this other stuff
+        q_model_structure = quantized_model.to_json()
+        f = pathlib.Path("q_model_structure.json")
+        f.write_text(q_model_structure)
+        model.save_weights("q_model_weights.h5")
 
+    def representative_dataset_gen():
+        for image in testX:
+            array = np.array(image)
+            array = np.expand_dims(array, axis = 0)
+            yield ([array])
 
-    converter = tf.lite.TFLiteConverter.from_keras_model(quantized_model)
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
-    converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE] # experiment with this
-    # converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    # quantization
-    converter.inference_input_type = tf.uint8
-    converter.inference_output_type = tf.uint8
-    # converter.representative_dataset = representative_dataset_gen
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    # converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.inference_input_type = tf.int8
+    converter.inference_output_type = tf.int8
+    converter.representative_dataset = representative_dataset_gen
     tflite_model = converter.convert()
 
 

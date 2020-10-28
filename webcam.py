@@ -36,7 +36,7 @@ def face_detector(image):
     img1 = cv2.resize(img1, (input_image_dim[0], input_image_dim[1]))
     img1 = img_to_array(img1)
 
-    input_data = np.empty((1, input_image_dim[0], input_image_dim[1], input_image_dim[2]), dtype=np.float32)
+    input_data = np.empty((1, input_image_dim[0], input_image_dim[1], input_image_dim[2]), dtype=np.int8)
     img = img_to_array(img1)
     input_data[0, :, :, :] = img
     interpreter.set_tensor(input_details[0]["index"], input_data)
@@ -46,7 +46,7 @@ def face_detector(image):
     processed_image = input_data[0,:,:,:]
 
     print("          OBJECT | FACE")
-    print(f"{output_data[0, 0] * 100} | {output_data[0, 1] * 100}")
+    print(f"{output_data[0, 0]} | {output_data[0, 1]}")
     # if output_data[0, 0] * 100  < 50 and output_data[0, 1] * 100 > 97:
     #     print("POSITIVE")
     # else:

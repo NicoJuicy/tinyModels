@@ -4,7 +4,6 @@
 *.json
 *.h5
 *.npy
-dataset
 export
 darknet_tiny.py_plot.png
 webcam_results
