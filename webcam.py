@@ -19,7 +19,7 @@ fontColor_red = (0,0,128)
 fontColor_yellow = (255,255,0)
 lineType = 2
 
-model_path = "squeezenet_opt.tflite"
+model_path = "trained_models/squeezenet_opt.tflite"
 input_image_dim = (dimension[0], dimension[1], 1 if grayscale else 0)
 print(f"Working with images in {input_image_dim}")
 
@@ -36,17 +36,17 @@ def face_detector(image):
     img1 = cv2.resize(img1, (input_image_dim[0], input_image_dim[1]))
     img1 = img_to_array(img1)
 
-    input_data = np.empty((1, input_image_dim[0], input_image_dim[1], input_image_dim[2]), dtype=np.int8)
+    input_data = np.empty((1, input_image_dim[0], input_image_dim[1], input_image_dim[2]), dtype=np.float32)
     img = img_to_array(img1)
     input_data[0, :, :, :] = img
     interpreter.set_tensor(input_details[0]["index"], input_data)
     interpreter.invoke()
-    output_data = interpreter.get_tensor(output_details[0]["index"])
+    output_data = (interpreter.get_tensor(output_details[0]["index"]))
 
     processed_image = input_data[0,:,:,:]
 
     print("          OBJECT | FACE")
-    print(f"{output_data[0, 0]} | {output_data[0, 1]}")
+    print(f"{output_data[0, 0].astype(str)} | {output_data[0, 1].astype(str)}")
     # if output_data[0, 0] * 100  < 50 and output_data[0, 1] * 100 > 97:
     #     print("POSITIVE")
     # else:
