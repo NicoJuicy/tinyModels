@@ -2,7 +2,7 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.layers import Activation, Flatten, Dense
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 class LeNet:
 	@staticmethod

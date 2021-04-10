@@ -2,7 +2,7 @@ import sys, argparse, pathlib, random, cv2, os
 import numpy as np
 from keras_preprocessing.image import img_to_array, ImageDataGenerator
 from matplotlib import pyplot
-import tensorflow_model_optimization as tfmot
+# import tensorflow_model_optimization as tfmot
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
@@ -36,7 +36,7 @@ parser.add_argument(
     "--epochs",
     type=int,
     help="Type in how many training epochs you want to have ",
-    default=1,
+    default=3,
 )
 parser.add_argument(
     "-m",
@@ -170,9 +170,9 @@ def run_training(epochs, batch_size):
     if train_keras == True:
         model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-    quantize_model = tfmot.quantization.keras.quantize_model
-    quantized_model = quantize_model(model)
-    quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+    # quantize_model = tfmot.quantization.keras.quantize_model
+    # quantized_model = quantize_model(model)
+    # quantized_model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
     print(f"Compiled model")
 
@@ -198,28 +198,28 @@ def run_training(epochs, batch_size):
         model.save_weights("model_weights.h5")
         model.save("model_full.h5")
 
-    else:
-        print("Starting training on quantized model")
+    # else:
+    #     print("Starting training on quantized model")
 
-        history_q = quantized_model.fit(
-            trainX,
-            trainY,
-            epochs=epochs,
-            batch_size=batch_size,
-            validation_data=(testX, testY),
-            shuffle=True
-        )
+    #     history_q = quantized_model.fit(
+    #         trainX,
+    #         trainY,
+    #         epochs=epochs,
+    #         batch_size=batch_size,
+    #         validation_data=(testX, testY),
+    #         shuffle=True
+    #     )
 
-        quantized_model.summary()
-        results = quantized_model.evaluate(testX, testY)
-        print("Loss, Accuracy:", results)
-        summarize_diagnostics(history_q)
+    #     quantized_model.summary()
+    #     results = quantized_model.evaluate(testX, testY)
+    #     print("Loss, Accuracy:", results)
+    #     summarize_diagnostics(history_q)
 
-        # saving this other stuff
-        q_model_structure = quantized_model.to_json()
-        f = pathlib.Path("q_model_structure.json")
-        f.write_text(q_model_structure)
-        model.save_weights("q_model_weights.h5")
+    #     # saving this other stuff
+    #     q_model_structure = quantized_model.to_json()
+    #     f = pathlib.Path("q_model_structure.json")
+    #     f.write_text(q_model_structure)
+    #     model.save_weights("q_model_weights.h5")
 
     def representative_dataset_gen():
         for image in testX:
