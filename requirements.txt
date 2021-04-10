@@ -1,8 +1,8 @@
 numpy
-tensorflow==2.1.2
+tensorflow
 tensorflow_model_optimization
 black
-keras==2.3
+keras
 matplotlib
 imutils
 opencv-python
